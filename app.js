@@ -2,12 +2,12 @@
  * =================================================================
  * SCRIPT UTAMA FRONTEND - JURNAL PEMBELAJARAN (VERSI LENGKAP & STABIL)
  * =================================================================
- * @version 3.3 - Implementasi Manajemen Pengguna
+ * @version 3.4 - Implementasi Toggle Password
  * @author Gemini AI Expert for User
  *
  * PERUBAHAN UTAMA:
+ * - [FITUR UX] Menambahkan ikon mata untuk menampilkan/menyembunyikan password di halaman login.
  * - [FITUR] Mengimplementasikan fungsionalitas CRUD penuh untuk Manajemen Pengguna.
- * - [URL BARU] Menggunakan URL Web App yang telah diperbarui.
  * - [KEAMANAN] Fungsi handleLogin() sudah disesuaikan dengan backend yang aman.
  */
 
@@ -66,6 +66,31 @@ function showSection(sectionId) {
     if (activeSection) {
         activeSection.style.display = 'block';
     }
+}
+
+/**
+ * [BARU] Menambahkan logika untuk ikon mata pada input password.
+ */
+function setupPasswordToggle() {
+    const toggleIcon = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+
+    if (!toggleIcon || !passwordInput) return; // Hentikan jika elemen tidak ada di halaman
+
+    const eyeIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+    const eyeSlashIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243l-4.243-4.243" /></svg>`;
+    
+    toggleIcon.innerHTML = eyeIcon; // Atur ikon awal
+
+    toggleIcon.addEventListener('click', () => {
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.innerHTML = eyeSlashIcon;
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.innerHTML = eyeIcon;
+        }
+    });
 }
 
 // ====================================================================
@@ -458,9 +483,8 @@ ${presensiList}
     alert(detailText);
 }
 
-// --- [BARU] 3.6. MANAJEMEN PENGGUNA ---
-
-/** Memuat semua pengguna dari backend dan menampilkannya di tabel. */
+// --- 3.6. MANAJEMEN PENGGUNA ---
+// (Tidak ada perubahan pada blok ini)
 async function loadUsers(forceRefresh = false) {
     const tableBody = document.getElementById('penggunaResultsTableBody');
     if (!tableBody) return;
@@ -488,8 +512,6 @@ async function loadUsers(forceRefresh = false) {
         showLoading(false);
     }
 }
-
-/** Merender data pengguna ke dalam tabel HTML. */
 function renderUsersTable(usersArray) {
     const tableBody = document.getElementById('penggunaResultsTableBody');
     tableBody.innerHTML = '';
@@ -511,8 +533,6 @@ function renderUsersTable(usersArray) {
         tableBody.appendChild(tr);
     });
 }
-
-/** Menangani penyimpanan (tambah/update) pengguna. */
 async function saveUser() {
     const oldUsername = document.getElementById('formUsernameOld').value;
     const action = oldUsername ? 'updateUser' : 'addUser';
@@ -528,7 +548,6 @@ async function saveUser() {
         formData.append('oldUsername', oldUsername);
     }
 
-    // Validasi untuk addUser
     if (action === 'addUser' && !formData.get('password')) {
         return showStatusMessage('Password wajib diisi untuk pengguna baru.', 'error');
     }
@@ -550,8 +569,6 @@ async function saveUser() {
         showLoading(false);
     }
 }
-
-/** Mengisi form untuk mengedit pengguna. */
 function editUserHandler(username) {
     const user = cachedUsers.find(u => u.username === username);
     if (!user) return;
@@ -567,10 +584,7 @@ function editUserHandler(username) {
     saveButton.textContent = 'Update Pengguna';
     document.getElementById('formPengguna').scrollIntoView({ behavior: 'smooth' });
 }
-
-/** Menangani penghapusan pengguna. */
 async function deleteUserHandler(username) {
-    // Pencegahan menghapus diri sendiri, asumsi username disimpan di session
     const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser'));
     if (loggedInUser && loggedInUser.username === username) {
         return showStatusMessage('Anda tidak dapat menghapus akun Anda sendiri.', 'error');
@@ -598,8 +612,6 @@ async function deleteUserHandler(username) {
         }
     }
 }
-
-/** Mereset form manajemen pengguna. */
 function resetFormPengguna() {
     document.getElementById('formPengguna').reset();
     document.getElementById('formUsernameOld').value = '';
@@ -622,7 +634,6 @@ function setupDashboardListeners() {
             button.classList.add('active');
             const sectionId = button.dataset.section;
             showSection(sectionId);
-            // Muat data yang relevan saat section diaktifkan
             if (sectionId === 'riwayatSection') {
                 loadRiwayatJurnal();
             } else if (sectionId === 'penggunaSection') {
@@ -652,7 +663,7 @@ function setupDashboardListeners() {
         }
     });
 
-    // [BARU] Form Pengguna
+    // Form Pengguna
     document.getElementById('formPengguna')?.addEventListener('submit', (e) => { e.preventDefault(); saveUser(); });
     document.getElementById('resetPenggunaButton')?.addEventListener('click', resetFormPengguna);
 }
@@ -661,13 +672,11 @@ function initDashboardPage() {
     checkAuthentication();
     setupDashboardListeners();
     
-    // Muat data awal untuk cache
     populateAllFilters();
     loadDashboardStats();
     searchSiswa();
     loadUsers(); 
     
-    // Tampilkan section default
     showSection('jurnalSection');
     document.querySelector('.section-nav button[data-section="jurnalSection"]')?.classList.add('active');
 }
@@ -675,7 +684,10 @@ function initDashboardPage() {
 function initLoginPage() {
     checkAuthentication();
     document.getElementById('loginButton')?.addEventListener('click', handleLogin);
-    document.querySelector('.login-container form')?.addEventListener('submit', (e) => { e.preventDefault(); handleLogin(); });
+    document.querySelector('.login-container form, .login-box form')?.addEventListener('submit', (e) => { e.preventDefault(); handleLogin(); });
+    
+    // [DIPERBAIKI] Panggil fungsi untuk mengaktifkan toggle password
+    setupPasswordToggle();
 }
 
 // ====================================================================
