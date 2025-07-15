@@ -2,26 +2,28 @@
  * =================================================================
  * SCRIPT UTAMA FRONTEND - JURNAL PEMBELAJARAN (VERSI LENGKAP & STABIL)
  * =================================================================
- * @version 3.9 - Filter Bertingkat untuk Riwayat
+ * @version 4.0 - Perbaikan & Penyeragaman Filter Riwayat
  * @author Gemini AI Expert for User
  *
  * PERUBAHAN UTAMA:
- * - [FITUR] Mengimplementasikan filter bertingkat pada halaman Riwayat Jurnal
- *   dengan sumber data dari sheet Jurnal.
- * - [OPTIMASI] Memisahkan logika filter antara halaman Input dan Riwayat.
+ * - [PERBAIKAN BUG] Mengubah sumber data untuk filter di halaman Riwayat. Sekarang
+ *   kedua halaman (Input & Riwayat) menggunakan sumber data yang sama (`relationalFilterData`)
+ *   yang berasal dari Database Siswa untuk konsistensi dan keandalan.
+ * - [OPTIMASI] Data filter utama sekarang hanya diambil dari server satu kali per sesi.
+ * - [OPTIMASI] Menghapus variabel cache dan logika `fetch` yang redundan.
  */
 
 // ====================================================================
 // TAHAP 1: KONFIGURASI GLOBAL DAN STATE APLIKASI
 // ====================================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyeAOVbkBSFvXhdFWwCEXb-soGZXlfny4Jqwj9xH7PG3JlbqazCOZHsBlVulgWuYaxBwQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHmCvjFgOoS50evOaP4pIEpXwWiuoZNziFT2xdQXsoTcKB6_Lj0fVISl68eGTeagjO2Q/exec";
 
 let cachedSiswaData = [];
 let cachedJurnalHistory = [];
 let cachedUsers = []; 
-let relationalFilterData = [];
-let relationalHistoryData = []; // Cache baru untuk data filter riwayat
+let relationalFilterData = []; // Satu-satunya sumber kebenaran untuk data filter
+let hasLoadedRelationalData = false; // Flag untuk mencegah fetch berulang
 let searchTimeout;
 
 // ====================================================================
@@ -146,31 +148,61 @@ function handleLogout() {
 
 // --- 3.2. DASHBOARD & DATA GLOBAL ---
 
-// Filter bertingkat untuk HALAMAN INPUT JURNAL
+// [DIPERBAIKI] Filter bertingkat untuk HALAMAN INPUT JURNAL & RIWAYAT (disatukan & dioptimalkan)
 const filterTahunAjaranEl = document.getElementById('filterTahunAjaran');
 const filterSemesterEl = document.getElementById('filterSemester');
 const filterKelasEl = document.getElementById('filterKelas');
 const filterMataPelajaranEl = document.getElementById('filterMataPelajaran');
 
+const riwayatTahunAjaranEl = document.getElementById('riwayatFilterTahunAjaran');
+const riwayatSemesterEl = document.getElementById('riwayatFilterSemester');
+const riwayatKelasEl = document.getElementById('riwayatFilterKelas');
+const riwayatMapelEl = document.getElementById('riwayatFilterMapel');
+
+// Fungsi utama untuk mengambil data filter HANYA SEKALI
 async function initCascadingFilters() {
-    if (!filterTahunAjaranEl) return;
+    if (hasLoadedRelationalData || !filterTahunAjaranEl) return;
     try {
+        showLoading(true); // Tampilkan loading saat pertama kali memuat data
         const response = await fetch(`${SCRIPT_URL}?action=getRelationalFilterData`);
         const result = await response.json();
         if (result.status === 'success') {
             relationalFilterData = result.data;
+            hasLoadedRelationalData = true; // Tandai bahwa data berhasil dimuat
+
+            // Isi dropdown untuk halaman Input Jurnal
             const allTahunAjaran = [...new Set(result.data.map(item => item.tahunAjaran).filter(Boolean))].sort();
             populateDropdown('filterTahunAjaran', allTahunAjaran, '-- Pilih Tahun Ajaran --');
             resetAndDisableDropdown(filterSemesterEl, '-- Pilih Semester --');
             resetAndDisableDropdown(filterKelasEl, '-- Pilih Kelas --');
             resetAndDisableDropdown(filterMataPelajaranEl, '-- Pilih Mapel --');
+
         } else {
-            showStatusMessage('Gagal memuat data filter.', 'error');
+            showStatusMessage('Gagal memuat data filter utama.', 'error');
         }
     } catch (error) {
         console.error("Gagal memuat data filter relasional:", error);
+        showStatusMessage('Kesalahan jaringan saat memuat filter.', 'error');
+    } finally {
+        showLoading(false);
     }
 }
+
+// Fungsi untuk mengisi filter di halaman Riwayat (menggunakan data yang sudah ada)
+function initHistoryCascadingFilters() {
+    if (!riwayatTahunAjaranEl || !hasLoadedRelationalData) return;
+    
+    // Gunakan `relationalFilterData` yang sudah ada, jangan fetch ulang.
+    const allTahunAjaran = [...new Set(relationalFilterData.map(item => item.tahunAjaran).filter(Boolean))].sort();
+    populateDropdown('riwayatFilterTahunAjaran', allTahunAjaran, '-- Semua Tahun --');
+
+    // Reset dan nonaktifkan filter anak-anaknya.
+    resetAndDisableDropdown(riwayatSemesterEl, '-- Semua Semester --');
+    resetAndDisableDropdown(riwayatKelasEl, '-- Semua Kelas --');
+    resetAndDisableDropdown(riwayatMapelEl, '-- Semua Mapel --');
+}
+
+// Event handler untuk filter halaman Input
 function onTahunAjaranChange() {
     const selectedTahun = filterTahunAjaranEl.value;
     resetAndDisableDropdown(filterSemesterEl, '-- Pilih Semester --');
@@ -202,36 +234,14 @@ function onKelasChange() {
     filterMataPelajaranEl.disabled = false;
 }
 
-// Filter bertingkat untuk HALAMAN RIWAYAT JURNAL
-const riwayatTahunAjaranEl = document.getElementById('riwayatFilterTahunAjaran');
-const riwayatSemesterEl = document.getElementById('riwayatFilterSemester');
-const riwayatKelasEl = document.getElementById('riwayatFilterKelas');
-const riwayatMapelEl = document.getElementById('riwayatFilterMapel');
-
-async function initHistoryCascadingFilters() {
-    if (!riwayatTahunAjaranEl) return;
-    resetAndDisableDropdown(riwayatSemesterEl, '-- Semua Semester --');
-    resetAndDisableDropdown(riwayatKelasEl, '-- Semua Kelas --');
-    resetAndDisableDropdown(riwayatMapelEl, '-- Semua Mapel --');
-    try {
-        const response = await fetch(`${SCRIPT_URL}?action=getHistoryFilterData`);
-        const result = await response.json();
-        if (result.status === 'success') {
-            relationalHistoryData = result.data;
-            const allTahunAjaran = [...new Set(relationalHistoryData.map(item => item.tahunAjaran))].sort();
-            populateDropdown('riwayatFilterTahunAjaran', allTahunAjaran, '-- Semua Tahun --');
-        }
-    } catch (error) {
-        console.error("Gagal memuat data filter riwayat:", error);
-    }
-}
+// [DIPERBAIKI] Event handler untuk filter halaman Riwayat
 function onHistoryTahunAjaranChange() {
     const selectedTahun = riwayatTahunAjaranEl.value;
     resetAndDisableDropdown(riwayatSemesterEl, '-- Semua Semester --');
     resetAndDisableDropdown(riwayatKelasEl, '-- Semua Kelas --');
     resetAndDisableDropdown(riwayatMapelEl, '-- Semua Mapel --');
     if (!selectedTahun) return;
-    const availableSemesters = [...new Set(relationalHistoryData.filter(item => item.tahunAjaran == selectedTahun).map(item => item.semester))].sort();
+    const availableSemesters = [...new Set(relationalFilterData.filter(item => item.tahunAjaran == selectedTahun).map(item => item.semester).filter(Boolean))].sort();
     populateDropdown('riwayatFilterSemester', availableSemesters, '-- Semua Semester --');
     riwayatSemesterEl.disabled = false;
 }
@@ -241,7 +251,7 @@ function onHistorySemesterChange() {
     resetAndDisableDropdown(riwayatKelasEl, '-- Semua Kelas --');
     resetAndDisableDropdown(riwayatMapelEl, '-- Semua Mapel --');
     if (!selectedSemester) return;
-    const availableKelas = [...new Set(relationalHistoryData.filter(item => item.tahunAjaran == selectedTahun && item.semester == selectedSemester).map(item => item.kelas))].sort();
+    const availableKelas = [...new Set(relationalFilterData.filter(item => item.tahunAjaran == selectedTahun && item.semester == selectedSemester).map(item => item.kelas).filter(Boolean))].sort();
     populateDropdown('riwayatFilterKelas', availableKelas, '-- Semua Kelas --');
     riwayatKelasEl.disabled = false;
 }
@@ -251,7 +261,8 @@ function onHistoryKelasChange() {
     const selectedKelas = riwayatKelasEl.value;
     resetAndDisableDropdown(riwayatMapelEl, '-- Semua Mapel --');
     if (!selectedKelas) return;
-    const availableMapel = [...new Set(relationalHistoryData.filter(item => item.tahunAjaran == selectedTahun && item.semester == selectedSemester && item.kelas == selectedKelas).map(item => item.mapel))].sort();
+    // Di Riwayat, kita ambil semua mapel yang ada di kelas itu, terlepas dari semester
+    const availableMapel = [...new Set(relationalFilterData.filter(item => item.tahunAjaran == selectedTahun && item.semester == selectedSemester && item.kelas == selectedKelas).flatMap(item => item.mapel).filter(Boolean))].sort();
     populateDropdown('riwayatFilterMapel', availableMapel, '-- Semua Mapel --');
     riwayatMapelEl.disabled = false;
 }
@@ -315,6 +326,8 @@ async function saveSiswa() {
             showStatusMessage(result.message, 'success');
             resetFormSiswa();
             searchSiswa(true);
+            hasLoadedRelationalData = false; // Reset flag agar filter dimuat ulang dengan data baru
+            initCascadingFilters();
         } else { showStatusMessage(`Gagal: ${result.message}`, 'error'); }
     } catch (error) { showStatusMessage(`Terjadi kesalahan jaringan: ${error.message}`, 'error'); }
     finally { showLoading(false); }
@@ -353,6 +366,8 @@ async function deleteSiswaHandler(nisn) {
             if (result.status === 'success') {
                 showStatusMessage(result.message, 'success');
                 searchSiswa(true);
+                hasLoadedRelationalData = false; // Reset flag agar filter dimuat ulang dengan data baru
+                initCascadingFilters();
             } else { showStatusMessage(`Gagal menghapus: ${result.message}`, 'error'); }
         } catch (error) { showStatusMessage(`Terjadi kesalahan jaringan: ${error.message}`, 'error'); }
         finally { showLoading(false); }
@@ -409,7 +424,7 @@ async function submitJurnal() {
             showStatusMessage(result.message, 'success');
             document.getElementById('formJurnal').reset();
             document.getElementById('presensiTableBody').innerHTML = '';
-            initCascadingFilters();
+            initCascadingFilters(); // Memanggil ulang untuk reset dropdown ke state awal
         } else { showStatusMessage(`Gagal menyimpan jurnal: ${result.message}`, 'error'); }
     } catch (error) { showStatusMessage(`Terjadi kesalahan jaringan: ${error.message}`, 'error'); }
     finally { showLoading(false); }
@@ -571,10 +586,17 @@ function setupDashboardListeners() {
             button.classList.add('active');
             const sectionId = button.dataset.section;
             showSection(sectionId);
-            if (sectionId === 'riwayatSection') loadRiwayatJurnal();
-            else if (sectionId === 'penggunaSection') loadUsers(true);
-            else if (sectionId === 'jurnalSection') loadDashboardStats();
-            else if (sectionId === 'siswaSection') searchSiswa();
+            // [DIPERBAIKI] Logika pemanggilan data dioptimalkan
+            if (sectionId === 'riwayatSection') {
+                initHistoryCascadingFilters(); // Memuat filter riwayat
+                loadRiwayatJurnal();
+            } else if (sectionId === 'penggunaSection') {
+                loadUsers(true);
+            } else if (sectionId === 'jurnalSection') {
+                loadDashboardStats();
+            } else if (sectionId === 'siswaSection') {
+                searchSiswa();
+            }
         });
     });
 
@@ -582,6 +604,11 @@ function setupDashboardListeners() {
     document.getElementById('filterTahunAjaran')?.addEventListener('change', onTahunAjaranChange);
     document.getElementById('filterSemester')?.addEventListener('change', onSemesterChange);
     document.getElementById('filterKelas')?.addEventListener('change', onKelasChange);
+
+    // [DITAMBAHKAN] Filter Bertingkat untuk Riwayat Jurnal
+    document.getElementById('riwayatFilterTahunAjaran')?.addEventListener('change', onHistoryTahunAjaranChange);
+    document.getElementById('riwayatFilterSemester')?.addEventListener('change', onHistorySemesterChange);
+    document.getElementById('riwayatFilterKelas')?.addEventListener('change', onHistoryKelasChange);
 
     // Tombol dan Form Lainnya
     document.getElementById('loadSiswaButton')?.addEventListener('click', loadSiswaForPresensi);
@@ -601,13 +628,13 @@ function setupDashboardListeners() {
     document.getElementById('resetPenggunaButton')?.addEventListener('click', resetFormPengguna);
 }
 
-function initDashboardPage() {
+async function initDashboardPage() {
     checkAuthentication();
     // Inisialisasi semua listener terlebih dahulu
     setupDashboardListeners();
 
-    // Panggil data filter bertingkat satu kali
-    initCascadingFilters();
+    // Panggil data filter bertingkat utama satu kali
+    await initCascadingFilters();
 
     // Tampilkan section default dan panggil data HANYA untuk section itu
     showSection('jurnalSection');
