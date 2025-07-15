@@ -15,7 +15,7 @@
 // TAHAP 1: KONFIGURASI GLOBAL DAN STATE APLIKASI
 // ====================================================================
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVwsvwi9UaoKGJFqZXv1N7eetn9_8LpI8I3rcxhZ75zL42o0RZ7aU5x3yPJPUSzAE6bQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyeAOVbkBSFvXhdFWwCEXb-soGZXlfny4Jqwj9xH7PG3JlbqazCOZHsBlVulgWuYaxBwQ/exec";
 
 let cachedSiswaData = [];
 let cachedJurnalHistory = [];
