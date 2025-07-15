@@ -2,13 +2,13 @@
  * =================================================================
  * SCRIPT UTAMA FRONTEND - JURNAL PEMBELAJARAN (VERSI LENGKAP & STABIL)
  * =================================================================
- * @version 3.6 - Peningkatan Fitur Riwayat Jurnal
+ * @version 3.7 - Peningkatan Filter Presensi
  * @author Gemini AI Expert for User
  *
  * PERUBAHAN UTAMA:
- * - [FITUR] Halaman Riwayat Jurnal sekarang menggunakan format tabel.
- * - [FITUR] Menambahkan filter Tahun Ajaran, Semester, dan Rentang Tanggal di Riwayat.
- * - [FITUR] Menambahkan fungsionalitas Export ke Excel untuk data riwayat yang difilter.
+ * - [FITUR] `loadSiswaForPresensi` sekarang menggunakan 4 kriteria filter:
+ *   Tahun Ajaran, Semester, Kelas, dan Mata Pelajaran.
+ * - [UX] Tombol muat presensi dipindahkan ke bawah form filter.
  */
 
 // ====================================================================
@@ -16,7 +16,7 @@
 // ====================================================================
 
 // URL WEB APP YANG SUDAH TERBUKTI STABIL
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwABpAkNjjtCgDDYOjF37klR1l5kJasN4HmUu0oCL1DdkmV0hw5x16Qv7Dwtn1eXn9Ekw/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbww4SUDEjF5NAG-WrX0tSqLo_IHES3JRBP1ZXLyLxp22eDVSdhqdSmTnTHDLAWqLh-5Zw/exec";
 
 // --- STATE APLIKASI & CACHE ---
 let cachedSiswaData = [];
@@ -133,29 +133,22 @@ function handleLogout() {
 }
 
 // --- 3.2. DASHBOARD & DATA GLOBAL ---
-/**
- * [DIPERBAIKI] Mengisi semua dropdown filter, termasuk untuk halaman Riwayat.
- */
+// (Tidak ada perubahan)
 async function populateAllFilters() {
     try {
         const response = await fetch(`${SCRIPT_URL}?action=getFilterOptions`);
         const result = await response.json();
         if (result.status === 'success') {
-            // Filter untuk Form Input Jurnal
             populateDropdown('filterTahunAjaran', result.data.tahunAjaran, '-- Pilih Tahun Ajaran --');
             populateDropdown('filterSemester', result.data.semester, '-- Pilih Semester --');
             populateDropdown('filterKelas', result.data.kelas, '-- Pilih Kelas --');
             populateDropdown('filterMataPelajaran', result.data.mataPelajaran, '-- Pilih Mapel --');
-            
-            // Filter untuk Halaman Riwayat
             populateDropdown('riwayatFilterTahunAjaran', result.data.tahunAjaran, '-- Semua Tahun --');
             populateDropdown('riwayatFilterSemester', result.data.semester, '-- Semua Semester --');
             populateDropdown('riwayatFilterKelas', result.data.kelas, '-- Semua Kelas --');
             populateDropdown('riwayatFilterMapel', result.data.mataPelajaran, '-- Semua Mapel --');
         }
-    } catch (error) {
-        console.error("Gagal memuat filter:", error);
-    }
+    } catch (error) { console.error("Gagal memuat filter:", error); }
 }
 async function loadDashboardStats() {
     try {
@@ -166,9 +159,7 @@ async function loadDashboardStats() {
             document.getElementById('statKehadiran').textContent = result.data.tingkatKehadiran;
             document.getElementById('statMapelTeratas').textContent = result.data.mapelTeratas;
         }
-    } catch (error) {
-        console.error("Gagal memuat statistik:", error);
-    }
+    } catch (error) { console.error("Gagal memuat statistik:", error); }
 }
 
 // --- 3.3. MANAJEMEN SISWA ---
@@ -271,28 +262,67 @@ function exportSiswaToExcel() {
     } catch (error) { showStatusMessage('Gagal melakukan ekspor.', 'error'); }
 }
 
-// --- 3.4. INPUT JURNAL ---
-// (Tidak ada perubahan)
+// --- 3.4. INPUT JURNAL & PRESENSI ---
+
+/**
+ * [DIPERBAIKI] Fungsi ini sekarang memuat siswa berdasarkan 4 kriteria:
+ * Tahun Ajaran, Semester, Kelas, dan Mata Pelajaran.
+ */
 async function loadSiswaForPresensi() {
-    const kelas = document.getElementById('filterKelas').value, tahunAjaran = document.getElementById('filterTahunAjaran').value;
+    const tahunAjaran = document.getElementById('filterTahunAjaran').value;
+    const semester = document.getElementById('filterSemester').value;
+    const kelas = document.getElementById('filterKelas').value;
+    const mapel = document.getElementById('filterMataPelajaran').value;
     const tableBody = document.getElementById('presensiTableBody');
-    if (!kelas || !tahunAjaran) return showStatusMessage('Pilih Tahun Ajaran dan Kelas terlebih dahulu.', 'info');
+
+    // Validasi baru yang lebih lengkap
+    if (!tahunAjaran || !semester || !kelas || !mapel) {
+        return showStatusMessage('Harap pilih Tahun Ajaran, Semester, Kelas, dan Mata Pelajaran terlebih dahulu.', 'info');
+    }
+
     showLoading(true);
     tableBody.innerHTML = '<tr><td colspan="3">Memuat data siswa...</td></tr>';
+
+    // Bangun parameter URL dengan benar
+    const params = new URLSearchParams({
+        action: 'getSiswaForPresensi',
+        tahunAjaran: tahunAjaran,
+        semester: semester,
+        kelas: kelas,
+        mapel: mapel
+    }).toString();
+    
     try {
-        const response = await fetch(`${SCRIPT_URL}?action=getSiswaForPresensi&kelas=${kelas}&tahunAjaran=${tahunAjaran}`);
+        const response = await fetch(`${SCRIPT_URL}?${params}`);
         const result = await response.json();
         tableBody.innerHTML = '';
         if (result.status === 'success' && result.data.length > 0) {
             result.data.forEach(siswa => {
                 const tr = document.createElement('tr');
-                tr.dataset.nisn = siswa.NISN; tr.dataset.nama = siswa.Nama;
-                tr.innerHTML = `<td data-label="NISN">${siswa.NISN}</td><td data-label="Nama">${siswa.Nama}</td><td data-label="Kehadiran"><select class="kehadiran-status" style="width:100%; padding: 0.5rem;"><option value="Hadir" selected>Hadir</option><option value="Sakit">Sakit</option><option value="Izin">Izin</option><option value="Alfa">Alfa</option></select></td>`;
+                tr.dataset.nisn = siswa.NISN;
+                tr.dataset.nama = siswa.Nama;
+                tr.innerHTML = `
+                    <td data-label="NISN">${siswa.NISN}</td>
+                    <td data-label="Nama">${siswa.Nama}</td>
+                    <td data-label="Kehadiran">
+                        <select class="kehadiran-status" style="width:100%; padding: 0.5rem;">
+                            <option value="Hadir" selected>Hadir</option>
+                            <option value="Sakit">Sakit</option>
+                            <option value="Izin">Izin</option>
+                            <option value="Alfa">Alfa</option>
+                        </select>
+                    </td>
+                `;
                 tableBody.appendChild(tr);
             });
-        } else { tableBody.innerHTML = '<tr><td colspan="3">Tidak ada siswa yang ditemukan.</td></tr>'; }
-    } catch (error) { showStatusMessage(`Gagal memuat siswa: ${error.message}`, 'error'); }
-    finally { showLoading(false); }
+        } else {
+            tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Tidak ada siswa yang ditemukan untuk filter yang dipilih.</td></tr>';
+        }
+    } catch (error) {
+        showStatusMessage('Gagal memuat siswa: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
 }
 async function submitJurnal() {
     const detailJurnal = {
@@ -324,15 +354,11 @@ async function submitJurnal() {
 }
 
 // --- 3.5. RIWAYAT JURNAL ---
-/**
- * [DIPERBAIKI] Fungsi ini sekarang mendukung filter yang lebih lengkap dan merender hasilnya ke tabel.
- */
+// (Tidak ada perubahan)
 async function loadRiwayatJurnal() {
     const tableBody = document.getElementById('riwayatTableBody');
     const exportButton = document.getElementById('exportRiwayatButton');
     if (!tableBody) return;
-
-    // Kumpulkan semua nilai filter
     const params = new URLSearchParams({
         action: 'getJurnalHistory',
         tahunAjaran: document.getElementById('riwayatFilterTahunAjaran').value,
@@ -342,21 +368,16 @@ async function loadRiwayatJurnal() {
         tanggalMulai: document.getElementById('riwayatFilterTanggalMulai').value,
         tanggalSelesai: document.getElementById('riwayatFilterTanggalSelesai').value
     }).toString();
-
     showLoading(true);
     tableBody.innerHTML = '<tr><td colspan="7">Memuat riwayat...</td></tr>';
-    exportButton.style.display = 'none'; // Sembunyikan tombol export saat memuat
-
+    exportButton.style.display = 'none';
     try {
         const response = await fetch(`${SCRIPT_URL}?${params}`);
         const result = await response.json();
-        
         if (result.status === 'success') {
-            cachedJurnalHistory = result.data; // Simpan di cache untuk detail & export
+            cachedJurnalHistory = result.data;
             renderRiwayatTable(result.data);
-            if (result.data.length > 0) {
-                exportButton.style.display = 'inline-block'; // Tampilkan tombol jika ada data
-            }
+            if (result.data.length > 0) exportButton.style.display = 'inline-block';
         } else {
             showStatusMessage('Gagal memuat riwayat: ' + result.message, 'error');
             tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Gagal memuat data.</td></tr>';
@@ -364,49 +385,21 @@ async function loadRiwayatJurnal() {
     } catch(error) {
         showStatusMessage('Gagal terhubung ke server: ' + error.message, 'error');
         tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Terjadi kesalahan jaringan.</td></tr>';
-    } finally {
-        showLoading(false);
-    }
+    } finally { showLoading(false); }
 }
-
-/**
- * [BARU] Fungsi ini merender data riwayat ke dalam format tabel.
- */
 function renderRiwayatTable(riwayatArray) {
     const tableBody = document.getElementById('riwayatTableBody');
     tableBody.innerHTML = '';
-    if (riwayatArray.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada riwayat jurnal yang ditemukan.</td></tr>';
-        return;
-    }
-
+    if (riwayatArray.length === 0) { tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada riwayat jurnal yang ditemukan.</td></tr>'; return; }
     riwayatArray.forEach(jurnal => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td data-label="Tanggal">${new Date(jurnal.Tanggal).toLocaleDateString('id-ID')}</td>
-            <td data-label="Kelas">${jurnal.Kelas}</td>
-            <td data-label="Semester">${jurnal.Semester || 'N/A'}</td>
-            <td data-label="Mapel">${jurnal.MataPelajaran}</td>
-            <td data-label="Materi">${(jurnal.Materi || '').substring(0, 50)}...</td>
-            <td data-label="Kehadiran">${jurnal.Kehadiran}</td>
-            <td data-label="Aksi">
-                <button class="btn btn-sm btn-secondary" onclick="showJurnalDetail('${jurnal.ID}')">Detail</button>
-            </td>
-        `;
+        tr.innerHTML = `<td data-label="Tanggal">${new Date(jurnal.Tanggal).toLocaleDateString('id-ID')}</td><td data-label="Kelas">${jurnal.Kelas}</td><td data-label="Semester">${jurnal.Semester || 'N/A'}</td><td data-label="Mapel">${jurnal.MataPelajaran}</td><td data-label="Materi">${(jurnal.Materi || '').substring(0, 50)}...</td><td data-label="Kehadiran">${jurnal.Kehadiran}</td><td data-label="Aksi"><button class="btn btn-sm btn-secondary" onclick="showJurnalDetail('${jurnal.ID}')">Detail</button></td>`;
         tableBody.appendChild(tr);
     });
 }
-
-/**
- * [DIPERBAIKI] Fungsi ini menggunakan data yang sudah ada di cache.
- * Untuk detail presensi, diperlukan panggilan API baru di masa mendatang.
- */
 function showJurnalDetail(jurnalId) {
     const jurnal = cachedJurnalHistory.find(j => j.ID == jurnalId);
     if (!jurnal) return alert('Detail jurnal tidak ditemukan di cache!');
-
-    // Catatan: Detail presensi per siswa tidak tersedia di data ringkas ini.
-    // Untuk menampilkannya, perlu dibuat fungsi backend baru `getJurnalDetailById(jurnalId)`.
     const detailText = `
 DETAIL JURNAL
 ---------------------------------
@@ -425,32 +418,12 @@ ${jurnal.Catatan || 'Tidak ada catatan.'}
     `;
     alert(detailText);
 }
-
-/**
- * [BARU] Fungsi ini mengekspor data riwayat yang ditampilkan ke file Excel.
- */
 function exportRiwayatToExcel() {
-    if (cachedJurnalHistory.length === 0) {
-        return showStatusMessage('Tidak ada data untuk diekspor.', 'info');
-    }
-
-    // Siapkan data untuk worksheet, pilih dan urutkan kolom sesuai keinginan
-    const dataToExport = cachedJurnalHistory.map(j => ({
-        Tanggal: new Date(j.Tanggal).toLocaleDateString('id-ID'),
-        "Tahun Ajaran": j.TahunAjaran,
-        Semester: j.Semester,
-        Kelas: j.Kelas,
-        "Mata Pelajaran": j.MataPelajaran,
-        Materi: j.Materi,
-        Catatan: j.Catatan,
-        Periode: j.Periode,
-        Kehadiran: j.Kehadiran
-    }));
-
+    if (cachedJurnalHistory.length === 0) return showStatusMessage('Tidak ada data untuk diekspor.', 'info');
+    const dataToExport = cachedJurnalHistory.map(j => ({ Tanggal: new Date(j.Tanggal).toLocaleDateString('id-ID'), "Tahun Ajaran": j.TahunAjaran, Semester: j.Semester, Kelas: j.Kelas, "Mata Pelajaran": j.MataPelajaran, Materi: j.Materi, Catatan: j.Catatan, Periode: j.Periode, Kehadiran: j.Kehadiran }));
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Jurnal");
-    
     const tgl = new Date().toISOString().slice(0, 10);
     XLSX.writeFile(workbook, `Riwayat_Jurnal_${tgl}.xlsx`);
 }
@@ -550,7 +523,7 @@ function resetFormPengguna() {
 // ====================================================================
 // TAHAP 4: INISIALISASI DAN EVENT LISTENERS
 // ====================================================================
-
+// (Tidak ada perubahan)
 function setupDashboardListeners() {
     document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
     const navButtons = document.querySelectorAll('.section-nav button');
@@ -563,20 +536,14 @@ function setupDashboardListeners() {
             if (sectionId === 'riwayatSection') {
                 loadRiwayatJurnal();
             } else if (sectionId === 'penggunaSection') {
-                loadUsers(true); // Selalu refresh saat tab diklik
+                loadUsers(true);
             }
         });
     });
-    
-    // Form Jurnal
     document.getElementById('loadSiswaButton')?.addEventListener('click', loadSiswaForPresensi);
     document.getElementById('submitJurnalButton')?.addEventListener('click', submitJurnal);
-
-    // Form Riwayat
     document.getElementById('filterRiwayatButton')?.addEventListener('click', loadRiwayatJurnal);
-    document.getElementById('exportRiwayatButton')?.addEventListener('click', exportRiwayatToExcel); // Listener untuk tombol export
-
-    // Form Siswa
+    document.getElementById('exportRiwayatButton')?.addEventListener('click', exportRiwayatToExcel);
     document.getElementById('formSiswa')?.addEventListener('submit', (e) => { e.preventDefault(); saveSiswa(); });
     document.getElementById('resetSiswaButton')?.addEventListener('click', resetFormSiswa);
     document.getElementById('searchButton')?.addEventListener('click', () => searchSiswa(true));
@@ -589,22 +556,17 @@ function setupDashboardListeners() {
             searchTimeout = setTimeout(() => searchSiswa(true), 400);
         }
     });
-
-    // Form Pengguna
     document.getElementById('formPengguna')?.addEventListener('submit', (e) => { e.preventDefault(); saveUser(); });
     document.getElementById('resetPenggunaButton')?.addEventListener('click', resetFormPengguna);
 }
-
 function initDashboardPage() {
     checkAuthentication();
     setupDashboardListeners();
     populateAllFilters();
     loadDashboardStats();
-    // Panggil fungsi muat data untuk tab default
     showSection('jurnalSection');
     document.querySelector('.section-nav button[data-section="jurnalSection"]')?.classList.add('active');
 }
-
 function initLoginPage() {
     checkAuthentication();
     document.getElementById('loginButton')?.addEventListener('click', handleLogin);
