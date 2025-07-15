@@ -17,7 +17,7 @@
 // ====================================================================
 
 // URL WEB APP YANG SUDAH TERBUKTI STABIL
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzu8DC21iX_heC_EdurCPMhjCcYM9d7bjMBY-mkq2SJNzPguIr3_WYRFfo3ikYqDhxS-g/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhX6G2IjsmEBejBfIH4TMxOLaE_TvZMe1t-MvIIqWNVxs8r6aDk2VyTjmmyeit75r99w/exec";
 
 // --- STATE APLIKASI & CACHE ---
 let cachedSiswaData = [];
