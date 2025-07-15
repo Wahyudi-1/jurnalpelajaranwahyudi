@@ -65,20 +65,29 @@
             <div class="card">
                 <div class="card-header">Input Jurnal Pembelajaran</div>
                 <form id="formJurnal">
+                    <!-- Filter Awal -->
                     <div class="form-grid">
                         <div class="form-group"><label for="filterTahunAjaran">Tahun Ajaran</label><select id="filterTahunAjaran" required></select></div>
                         <div class="form-group"><label for="filterSemester">Semester</label><select id="filterSemester" required></select></div>
                         <div class="form-group"><label for="filterKelas">Kelas</label><select id="filterKelas" required></select></div>
-                        <div class="form-group form-group-full"><button type="button" id="loadSiswaButton" class="btn btn-secondary">Tampilkan Siswa untuk Presensi</button></div>
                     </div>
                     <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);">
+                    
+                    <!-- Detail Pembelajaran -->
                     <div class="form-grid">
                         <div class="form-group"><label for="filterMataPelajaran">Mata Pelajaran</label><select id="filterMataPelajaran" required></select></div>
                         <div class="form-group"><label for="tanggalPembelajaran">Tanggal Pembelajaran</label><input type="date" id="tanggalPembelajaran" required></div>
                     </div>
+
+                    <!-- [DIPERBAIKI] Tombol dipindahkan ke sini -->
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <button type="button" id="loadSiswaButton" class="btn btn-secondary btn-block">Tampilkan Siswa untuk Presensi</button>
+                    </div>
+
                     <div class="form-group"><label for="periodePembelajaran">Periode Pembelajaran (Jam ke-)</label><input type="text" id="periodePembelajaran" placeholder="Contoh: 1-2, 5-6"></div>
                     <div class="form-group"><label for="materiPembelajaran">Materi yang Diajarkan</label><textarea id="materiPembelajaran" rows="3" required></textarea></div>
                     <div class="form-group"><label for="catatanPembelajaran">Catatan Selama Pembelajaran</label><textarea id="catatanPembelajaran" rows="3"></textarea></div>
+                    
                     <h4 style="margin-top: 2rem; margin-bottom: 1rem;">Presensi Siswa</h4>
                     <div class="table-container">
                         <table>
@@ -91,73 +100,29 @@
             </div>
         </div>
 
-        <!-- ====================================================== -->
-        <!-- Bagian 2: RIWAYAT JURNAL (DIPERBARUI)                  -->
-        <!-- ====================================================== -->
+        <!-- Bagian lain dari HTML (Riwayat, Siswa, Pengguna) tetap sama -->
         <div id="riwayatSection" class="content-section" style="display: none;">
             <div class="card">
                 <div class="card-header">Riwayat Jurnal Pembelajaran</div>
-
-                <!-- Filter Baru yang Lebih Lengkap -->
                 <div id="riwayatFilterForm" class="form-grid">
-                    <div class="form-group">
-                        <label for="riwayatFilterTahunAjaran">Tahun Ajaran</label>
-                        <select id="riwayatFilterTahunAjaran"></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="riwayatFilterSemester">Semester</label>
-                        <select id="riwayatFilterSemester"></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="riwayatFilterKelas">Kelas</label>
-                        <select id="riwayatFilterKelas"></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="riwayatFilterMapel">Mata Pelajaran</label>
-                        <select id="riwayatFilterMapel"></select>
-                    </div>
-                    <div class="form-group">
-                        <label for="riwayatFilterTanggalMulai">Dari Tanggal</label>
-                        <input type="date" id="riwayatFilterTanggalMulai">
-                    </div>
-                    <div class="form-group">
-                        <label for="riwayatFilterTanggalSelesai">Sampai Tanggal</label>
-                        <input type="date" id="riwayatFilterTanggalSelesai">
-                    </div>
-                    <div class="form-group form-group-full">
-                        <button type="button" id="filterRiwayatButton" class="btn btn-primary">Terapkan Filter</button>
-                        <button type="button" id="exportRiwayatButton" class="btn btn-success" style="margin-left: 10px; display: none;">Export ke Excel</button>
-                    </div>
+                    <div class="form-group"><label for="riwayatFilterTahunAjaran">Tahun Ajaran</label><select id="riwayatFilterTahunAjaran"></select></div>
+                    <div class="form-group"><label for="riwayatFilterSemester">Semester</label><select id="riwayatFilterSemester"></select></div>
+                    <div class="form-group"><label for="riwayatFilterKelas">Kelas</label><select id="riwayatFilterKelas"></select></div>
+                    <div class="form-group"><label for="riwayatFilterMapel">Mata Pelajaran</label><select id="riwayatFilterMapel"></select></div>
+                    <div class="form-group"><label for="riwayatFilterTanggalMulai">Dari Tanggal</label><input type="date" id="riwayatFilterTanggalMulai"></div>
+                    <div class="form-group"><label for="riwayatFilterTanggalSelesai">Sampai Tanggal</label><input type="date" id="riwayatFilterTanggalSelesai"></div>
+                    <div class="form-group form-group-full"><button type="button" id="filterRiwayatButton" class="btn btn-primary">Terapkan Filter</button><button type="button" id="exportRiwayatButton" class="btn btn-success" style="margin-left: 10px; display: none;">Export ke Excel</button></div>
                 </div>
-                
                 <hr style="margin: 2rem 0; border: 0; border-top: 1px solid var(--border-color);">
-
                 <h4>Hasil Pencarian Riwayat</h4>
                 <div class="table-container">
                     <table>
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Kelas</th>
-                                <th>Semester</th>
-                                <th>Mata Pelajaran</th>
-                                <th>Materi</th>
-                                <th>Kehadiran</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="riwayatTableBody">
-                            <!-- Data riwayat akan dimuat di sini oleh JavaScript -->
-                        </tbody>
+                        <thead><tr><th>Tanggal</th><th>Kelas</th><th>Semester</th><th>Mata Pelajaran</th><th>Materi</th><th>Kehadiran</th><th>Aksi</th></tr></thead>
+                        <tbody id="riwayatTableBody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-
-
-        <!-- ====================================================== -->
-        <!-- Bagian 3: MANAJEMEN SISWA                              -->
-        <!-- ====================================================== -->
         <div id="siswaSection" class="content-section" style="display: none;">
             <div class="card">
                 <div class="card-header">Manajemen Database Siswa</div>
@@ -185,10 +150,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- ====================================================== -->
-        <!-- Bagian 4: MANAJEMEN PENGGUNA (Fitur Admin)             -->
-        <!-- ====================================================== -->
         <div id="penggunaSection" class="content-section" style="display: none;">
             <div class="card">
                 <div class="card-header">Manajemen Pengguna</div>
