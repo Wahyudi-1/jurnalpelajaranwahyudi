@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Belajar Fisika</title>
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --primary-light: #e8f0fe;
+            --hover-bg: #f8fbff;
+            --hover-border: #d2e3fc;
+            --bg-color: #ffffff;
+            --bg-app: #f0f2f5;
+            --text-main: #202124;
+            --text-muted: #5f6368;
+            --border-color: #dadce0;
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px 10px;
+            font-family: 'Google Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-color: var(--bg-app);
+            display: flex;
+            justify-content: center;
+        }
+
+        .main-wrapper {
+            background-color: var(--bg-color);
+            padding: 30px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 650px;
+        }
+
+        /* */
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .tabs-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-btn {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            background-color: var(--hover-bg);
+            color: var(--primary-color);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border-color: var(--primary-light);
+        }
+
+        .content-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* */
+        .section-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .shortcut-card {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+            text-decoration: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .shortcut-card:hover {
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
+            transform: translateY(-2px);
+            border-color: var(--hover-border);
+            background-color: var(--hover-bg);
+        }
+
+        .icon-container {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #1a73e8, #a142f4);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(161, 66, 244, 0.3); 
+        }
+
+        .text-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 16px;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.2;
+        }
+
+        .media-wrapper {
+            position: relative;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            background-color: #f8f9fa;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* */
+        .video-wrapper {
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            background-color: #000;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .audio-wrapper {
+            padding: 0;
+            height: 180px; /* Ukuran yang pas untuk Google Drive Audio */
+        }
+        
+        .audio-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .infographic-wrapper {
+            height: 500px;
+        }
+
+        .infographic-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        
+        <!-- TOMBOL PINTASAN AI (GLOBAL - Selalu Muncul) -->
+        <div style="margin-bottom: 25px;">
+            <div class="section-label" style="color: var(--primary-color);">✨ Tutor AI Sokratik</div>
+            <a href="https://gemini.google.com/gem/1unsUNRTJlFwSe5NkwfPvd3onRzKBNmn7?usp=sharing" 
+               target="_blank" 
+               class="shortcut-card" id="ai-link">
+                <div class="icon-container">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z"/>
+                    </svg>
+                </div>
+                <div class="text-content">
+                    <span class="title">Tutor AI Besaran dan Pengukuran</span>
+                    <span class="subtitle">Tanya tentang Besaran, Pengukuran, Alat Ukur, dan Analisis Data</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- NAVIGASI TOPIK (TABS) -->
+        <div class="tabs-container" id="tabs-container">
+            <button class="tab-btn active" data-topic="besaran-pengukuran">Besaran dan Pengukuran</button>
+            <button class="tab-btn" data-topic="penggunaan-alat-ukur">Penggunaan Alat Ukur</button>
+            <button class="tab-btn" data-topic="angka-penting">Angka Penting dan Notasi Ilmiah</button>
+            <button class="tab-btn" data-topic="analisis-data">Analisis Data</button>
+        </div>
+
+        <div class="content-container" id="dynamic-content">
+            
+            <!-- 1. PREVIEW VIDEO -->
+            <div>
+                <div class="section-label">1. Video Penjelasan</div>
+                <div class="media-wrapper video-wrapper">
+                    <iframe id="video-frame" src="" title="Video Player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+
+            <!-- 2. AUDIO PLAYER -->
+            <div>
+                <div class="section-label">2. Podcast / Rekaman Audio</div>
+                <div class="media-wrapper audio-wrapper">
+                    <iframe id="audio-frame" src="" title="Audio Player" allow="autoplay" allowfullscreen></iframe>
+                </div>
+            </div>
+
+            <!-- 3. DISPLAY INFOGRAFIK -->
+            <div>
+                <div class="section-label">3. Infografik Materi</div>
+                <div class="media-wrapper infographic-wrapper">
+                    <iframe id="info-frame" src="" title="Infografik" allowfullscreen></iframe>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        /* ===============================================================
+        DATABASE LINK KONTEN (SILAKAN GANTI LINK DI BAWAH INI)
+        =============================================================== */
+        const contentData = {
+            "besaran-pengukuran": {
+                name: "Besaran dan Pengukuran",
+                videoLink: "https://drive.google.com/file/d/CONTOH_VIDEO_1/preview",
+                audioLink: "https://drive.google.com/file/d/CONTOH_AUDIO_1/preview",
+                infoLink: "https://drive.google.com/file/d/CONTOH_INFO_1/preview"
+            },
+            "penggunaan-alat-ukur": {
+                name: "Penggunaan Alat Ukur",
+                videoLink: "https://drive.google.com/file/d/CONTOH_VIDEO_2/preview",
+                audioLink: "https://drive.google.com/file/d/CONTOH_AUDIO_2/preview",
+                infoLink: "https://drive.google.com/file/d/CONTOH_INFO_2/preview"
+            },
+            "angka-penting": {
+                name: "Angka Penting dan Notasi Ilmiah",
+                videoLink: "https://drive.google.com/file/d/CONTOH_VIDEO_3/preview",
+                audioLink: "https://drive.google.com/file/d/CONTOH_AUDIO_3/preview",
+                infoLink: "https://drive.google.com/file/d/CONTOH_INFO_3/preview"
+            },
+            "analisis-data": {
+                name: "Analisis Data",
+                videoLink: "https://drive.google.com/file/d/CONTOH_VIDEO_4/preview",
+                audioLink: "https://drive.google.com/file/d/CONTOH_AUDIO_4/preview",
+                infoLink: "https://drive.google.com/file/d/CONTOH_INFO_4/preview"
+            }
+        };
+
+        // DOM Elements
+        const tabs = document.querySelectorAll('.tab-btn');
+        const contentContainer = document.getElementById('dynamic-content');
+        
+        const videoFrame = document.getElementById('video-frame');
+        const audioFrame = document.getElementById('audio-frame');
+        const infoFrame = document.getElementById('info-frame');
+        
+        const aiLinkElement = document.getElementById('ai-link');
+
+        // Fungsi untuk mengupdate konten berdasarkan topik
+        function updateContent(topicKey) {
+            const data = contentData[topicKey];
+            if (!data) return;
+
+            // Trigger animasi fade in (dengan perlindungan null agar tidak error)
+            if (contentContainer) {
+                contentContainer.classList.remove('fade-in');
+                void contentContainer.offsetWidth; // Trigger reflow
+                contentContainer.classList.add('fade-in');
+            }
+
+            // Update Iframes
+            if (videoFrame) videoFrame.src = data.videoLink;
+            if (audioFrame) audioFrame.src = data.audioLink;
+            if (infoFrame) infoFrame.src = data.infoLink;
+        }
+
+        // Event Listener untuk klik tab
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Hapus class active dari semua tab
+                tabs.forEach(t => t.classList.remove('active'));
+                
+                // Tambahkan class active ke tab yang diklik
+                tab.classList.add('active');
+                
+                // Update konten
+                const topicKey = tab.getAttribute('data-topic');
+                updateContent(topicKey);
+            });
+        });
+
+        // Inisialisasi konten pertama kali load
+        updateContent('besaran-pengukuran');
+
+        // Efek klik fisik untuk tombol shortcut AI
+        if (aiLinkElement) {
+            aiLinkElement.addEventListener('mousedown', () => {
+                aiLinkElement.style.transform = 'scale(0.98) translateY(0)';
+                aiLinkElement.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
+            });
+            aiLinkElement.addEventListener('mouseup', () => {
+                aiLinkElement.style.transform = 'translateY(-2px) scale(1)';
+                aiLinkElement.style.boxShadow = '0 4px 12px rgba(26, 115, 232, 0.15)';
+            });
+            aiLinkElement.addEventListener('mouseleave', () => {
+                aiLinkElement.style.transform = '';
+                aiLinkElement.style.boxShadow = '';
+            });
+        }
+    </script>
+</body>
+</html>
